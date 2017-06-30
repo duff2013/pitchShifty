@@ -1,4 +1,5 @@
 // S. M. Bernsee pitch shift algorithm for teensy
+// Use Serial Plotter
 /*******************************************
  *           editable items
  ******************************************/
@@ -18,7 +19,7 @@ float input[FFT_SIZE * 8];
 float output[FFT_SIZE * 8];
 
 void setup() {
-  // semitones to shift 12 is one octive
+  // semitones to shift, 12 is one octive
   int semitones = 12;
   // length of the input buffer
   int bufferLengthFrames = FFT_SIZE * 8;
@@ -35,16 +36,17 @@ void setup() {
   }
   /*
    * smbPitchShift params:
-   * 1: "pitchShift" - > semitones to shift up
+   * 1: "pitchShift"         -> semitones to shift up
    * 2: "bufferLengthFrames" -> number of samples in input buffer must be larger than FFT_SIZE
-   * 3: "FFT_SIZE" -> size of the FFT, needs to be a power of 2
-   * 4: "OVER_SAMPLE" -> fifo buffer overlap factor, more the better but slower, has to be divisable by FFT_SIZE
-   * 5: "sampleRate" -> sample rate for sin generation
-   * 6: "input" -> input buffer
-   * 7: "output" -> output buffer
+   * 3: "FFT_SIZE"           -> size of the FFT, needs to be a power of 2
+   * 4: "OVER_SAMPLE"        -> fifo buffer overlap factor, more the better but slower, has to be divisable by FFT_SIZE
+   * 5: "sampleRate"         -> sample rate for sin generation
+   * 6: "input"              -> input buffer
+   * 7: "output"             -> output buffer
    */
   smbPitchShift(pitchShift, bufferLengthFrames, FFT_SIZE, OVER_SAMPLE, sampleRate, input, output);
-  
+
+  // print input and output's
   for (int i = 0; i < bufferLengthFrames - FFT_SIZE; i++) {
     Serial.printf("%f,%f\n", input[i], output[i]);
     delay(10);
