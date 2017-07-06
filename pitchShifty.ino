@@ -1,5 +1,6 @@
 // S. M. Bernsee pitch shift algorithm for teensy
 // Use Serial Plotter
+#include "windows.h"
 /*******************************************
  *           editable items
  ******************************************/
@@ -44,7 +45,7 @@ void setup() {
    * 6: "input"              -> input buffer
    * 7: "output"             -> output buffer
    */
-  smbPitchShift(pitchShift, bufferLengthFrames, FFT_SIZE, OVER_SAMPLE, sampleRate, input, output);
+  smbPitchShift(pitchShift, bufferLengthFrames, OVER_SAMPLE, sampleRate, input, output);
 
   // print input and output's
   for (int i = 0; i < bufferLengthFrames - FFT_SIZE; i++) {
