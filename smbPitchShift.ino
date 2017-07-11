@@ -36,11 +36,7 @@
 
 *****************************************************************************/
 #include <arm_math.h>
-
 #define MAX_FRAME_LENGTH FFT_SIZE
-
-void smbFft(float *fftBuffer, long fftFrameSize, long sign);
-float smbAtan2(float x, float y);
 
 static float gLastPhasetmp = 0;
 static int stepShift = 0;
@@ -112,7 +108,7 @@ void smbPitchShift(const float pitchShift, const long numSampsToProcess, const l
       // do transform
       arm_cfft_radix4_init_f32(&fft_inst, 256, 0, 1);
       arm_cfft_radix4_f32(&fft_inst, gFFTworksp);
-      //smbFft(gFFTworksp, FFT_SIZE, -1);
+      
       // this is the analysis step
       for (k = 0; k <= fftFrameSize2; k++) {
 
@@ -187,8 +183,8 @@ void smbPitchShift(const float pitchShift, const long numSampsToProcess, const l
         phase = gSumPhase[k];
 
         // get real and imag part and re-interleave
-        gFFTworksp[2 * k] = magn * cosf(phase);
-        gFFTworksp[2 * k + 1] = magn * sinf(phase);
+        gFFTworksp[2 * k] = magn * arm_cos_f32(phase);//cosf(phase);
+        gFFTworksp[2 * k + 1] = magn * arm_sin_f32(phase);//;//sinf(phase);
       }
 
       // zero negative frequencies
@@ -197,7 +193,6 @@ void smbPitchShift(const float pitchShift, const long numSampsToProcess, const l
       // do inverse transform
       arm_cfft_radix4_init_f32(&fft_inst, 256, 1, 1);
       arm_cfft_radix4_f32(&fft_inst, gFFTworksp);
-      //smbFft(gFFTworksp, FFT_SIZE, 1);
 
       // do windowing and add to output accumulator
       for (k = 0; k < FFT_SIZE; k++) {
@@ -208,7 +203,7 @@ void smbPitchShift(const float pitchShift, const long numSampsToProcess, const l
 
       // shift output data buffer
       for (k = 0; k < stepSize; k++) {
-        outdata[k + (stepShift * stepSize)]   = gOutputAccum[k];
+        outdata[k + (stepShift * stepSize)] = gOutputAccum[k];
       }
       stepShift++;
 
@@ -220,63 +215,4 @@ void smbPitchShift(const float pitchShift, const long numSampsToProcess, const l
 
     }
   }
-}
-
-// -----------------------------------------------------------------------------------------------------------------
-
-
-void smbFft(float *fftBuffer, long fftFrameSize, long sign)
-{
-  float wr, wi, arg, *p1, *p2, temp;
-  float tr, ti, ur, ui, *p1r, *p1i, *p2r, *p2i;
-  long i, bitm, j, le, le2, k;
-
-  for (i = 2; i < 2 * fftFrameSize - 2; i += 2) {
-    for (bitm = 2, j = 0; bitm < 2 * fftFrameSize; bitm <<= 1) {
-      if (i & bitm) j++;
-      j <<= 1;
-    }
-    if (i < j) {
-      p1 = fftBuffer + i; p2 = fftBuffer + j;
-      temp = *p1; *(p1++) = *p2;
-      *(p2++) = temp; temp = *p1;
-      *p1 = *p2; *p2 = temp;
-    }
-  }
-  for (k = 0, le = 2; k < (long)(log(fftFrameSize) / log(2.) + .5); k++) {
-    le <<= 1;
-    le2 = le >> 1;
-    ur = 1.0;
-    ui = 0.0;
-    arg = M_PI / (le2 >> 1);
-    wr = cosf(arg);
-    wi = sign * sinf(arg);
-    for (j = 0; j < le2; j += 2) {
-      p1r = fftBuffer + j; p1i = p1r + 1;
-      p2r = p1r + le2; p2i = p2r + 1;
-      for (i = j; i < 2 * fftFrameSize; i += le) {
-        tr = *p2r * ur - *p2i * ui;
-        ti = *p2r * ui + *p2i * ur;
-        *p2r = *p1r - tr; *p2i = *p1i - ti;
-        *p1r += tr; *p1i += ti;
-        p1r += le; p1i += le;
-        p2r += le; p2i += le;
-      }
-      tr = ur * wr - ui * wi;
-      ui = ur * wi + ui * wr;
-      ur = tr;
-    }
-  }
-}
-
-float smbAtan2(float x, float y)
-{
-  float signx;
-  if (x > 0.) signx = 1.;
-  else signx = -1.;
-
-  if (x == 0.) return 0.;
-  if (y == 0.) return signx * M_PI / 2.;
-
-  return atan2(x, y);
 }
